@@ -1,0 +1,523 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>League Bingo — PoE 1: Curse of the Allflame</title>
+<style>
+  :root{
+    --title:#e8f7ee;
+    --green-bright:#5fe089;
+    --green-strong:#7dffa4;
+    --green-text:#8ef0b0;
+    --green-border:#54dd86;
+    --green-glow:rgba(95,224,137,.55);
+    --cell-bg:rgba(8,32,28,.55);
+    --input-bg:rgba(6,26,23,.6);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;min-height:100%}
+  body{
+    font-family:'Cinzel','Trajan Pro',Georgia,'Times New Roman',serif;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:34px 16px 52px;
+    color:var(--green-text);
+    background:radial-gradient(ellipse 130% 100% at 50% 24%,
+      #204f47 0%, #143b35 30%, #0c2822 52%, #061613 78%, #020c0a 100%);
+    background-attachment:fixed;
+  }
+  body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    background:radial-gradient(circle at 50% 64%, rgba(95,224,137,.14), rgba(95,224,137,0) 42%);
+  }
+
+  /* ---- Card (obszar eksportowany do grafiki) ---- */
+  .card{
+    position:relative;
+    z-index:1;
+    width:min(680px,100%);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:18px;
+  }
+  .title{
+    margin:0;
+    text-align:center;
+    font-size:clamp(24px,5.2vw,40px);
+    font-weight:600;
+    letter-spacing:.06em;
+    color:var(--title);
+    text-shadow:0 0 10px var(--green-glow), 0 0 26px rgba(95,224,137,.35), 0 2px 4px rgba(0,0,0,.6);
+  }
+
+  /* ---- Nick gracza ---- */
+  .nick-row{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:7px;
+    width:100%;
+    max-width:420px;
+  }
+  .nick-label{
+    font-size:13px;
+    letter-spacing:.2em;
+    text-transform:uppercase;
+    color:var(--green-bright);
+    opacity:.85;
+  }
+  .nick-input{
+    width:100%;
+    text-align:center;
+    padding:10px 14px;
+    border-radius:8px;
+    background:var(--input-bg);
+    border:1.5px solid var(--green-border);
+    color:var(--green-text);
+    font-family:inherit;
+    font-size:18px;
+    letter-spacing:.04em;
+    box-shadow:0 0 8px rgba(95,224,137,.2), inset 0 0 10px rgba(0,0,0,.35);
+    outline:none;
+    transition:border-color .2s, box-shadow .2s;
+  }
+  .nick-input::placeholder{color:rgba(142,240,176,.35)}
+  .nick-input:focus{
+    border-color:var(--green-strong);
+    box-shadow:0 0 12px var(--green-glow), inset 0 0 10px rgba(0,0,0,.35);
+  }
+
+  /* ---- Bingo 5x5 ---- */
+  .bingo{
+    width:100%;
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:8px;
+  }
+  .cell{
+    position:relative;
+    aspect-ratio:1/1;
+    border:2px solid var(--green-border);
+    border-radius:7px;
+    background:var(--cell-bg);
+    box-shadow:0 0 7px rgba(95,224,137,.28), inset 0 0 14px rgba(0,0,0,.45);
+    overflow:hidden;
+    transition:border-color .15s, box-shadow .2s;
+  }
+  .cell:focus-within{
+    border-color:var(--green-strong);
+    box-shadow:0 0 12px var(--green-glow), inset 0 0 14px rgba(0,0,0,.45);
+  }
+  .cell-pad{
+    position:absolute;
+    inset:0;
+    padding:6px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+    cursor:text;
+  }
+  .cell-text{
+    max-width:100%;
+    text-align:center;
+    line-height:1.15;
+    font-size:20px;
+    color:var(--green-text);
+    outline:none;
+    word-break:break-word;
+    overflow-wrap:anywhere;
+    white-space:normal;
+  }
+
+  /* ---- Akcje (poza obszarem eksportu) ---- */
+  .actions{
+    position:relative;
+    z-index:1;
+    margin-top:28px;
+    display:flex;
+    gap:14px;
+    flex-wrap:wrap;
+    justify-content:center;
+  }
+  .btn{
+    font-family:inherit;
+    cursor:pointer;
+    padding:12px 26px;
+    border-radius:9px;
+    background:linear-gradient(180deg, rgba(95,224,137,.22), rgba(95,224,137,.08));
+    border:1.6px solid var(--green-border);
+    color:var(--green-strong);
+    font-size:16px;
+    letter-spacing:.08em;
+    text-shadow:0 0 8px var(--green-glow);
+    box-shadow:0 0 10px rgba(95,224,137,.25), inset 0 0 12px rgba(0,0,0,.3);
+    transition:transform .08s, box-shadow .2s, background .2s;
+  }
+  .btn:hover{
+    background:linear-gradient(180deg, rgba(95,224,137,.34), rgba(95,224,137,.14));
+    box-shadow:0 0 18px var(--green-glow), inset 0 0 12px rgba(0,0,0,.3);
+  }
+  .btn:active{transform:translateY(1px)}
+  .btn.secondary{
+    color:var(--green-text);
+    background:linear-gradient(180deg, rgba(95,224,137,.10), rgba(95,224,137,.03));
+  }
+
+  .hint{
+    position:relative;
+    z-index:1;
+    margin-top:14px;
+    font-size:12px;
+    letter-spacing:.06em;
+    color:rgba(142,240,176,.45);
+    text-align:center;
+  }
+
+  .credits{
+    position:relative;
+    z-index:1;
+    margin-top:34px;
+    font-size:12px;
+    letter-spacing:.22em;
+    text-transform:uppercase;
+    color:rgba(142,240,176,.5);
+    text-align:center;
+  }
+  .credits strong{
+    color:var(--green-strong);
+    font-weight:600;
+    text-shadow:0 0 10px var(--green-glow);
+  }
+</style>
+</head>
+<body>
+
+  <div class="card" id="card">
+    <h1 class="title">PoE 1: Curse of the Allflame</h1>
+
+    <div class="nick-row">
+      <label class="nick-label" for="nick">Nick gracza</label>
+      <input id="nick" class="nick-input" type="text" placeholder="Wpisz nick gracza…" autocomplete="off" spellcheck="false">
+    </div>
+
+    <div class="bingo" id="bingo"></div>
+  </div>
+
+  <div class="actions">
+    <button id="save" class="btn">💾 Zapisz jako grafikę (PNG)</button>
+    <button id="clear" class="btn secondary">Wyczyść</button>
+  </div>
+
+  <div class="hint">Kliknij dowolną komórkę, aby ją edytować. Czcionka dopasuje się automatycznie.</div>
+
+  <footer class="credits">Created for <strong>INSOMNIA</strong></footer>
+
+  <canvas id="exportCanvas" style="display:none"></canvas>
+
+<script>
+(function(){
+  "use strict";
+
+  var GRID = 5;
+  var PAD = 6;          // wewnętrzny padding komórki (musi zgadzać się z .cell-pad)
+  var MAX_FONT = 20;    // px
+  var MIN_FONT = 7;     // px
+
+  var bingo = document.getElementById('bingo');
+  var cells = [];       // referencje do .cell-text (contenteditable)
+
+  /* ---- Budowa siatki 5x5 ---- */
+  for(var i=0; i<GRID*GRID; i++){
+    var cell = document.createElement('div');
+    cell.className = 'cell';
+
+    var pad = document.createElement('div');
+    pad.className = 'cell-pad';
+
+    var txt = document.createElement('div');
+    txt.className = 'cell-text';
+    txt.contentEditable = 'true';
+
+    pad.appendChild(txt);
+    cell.appendChild(pad);
+    bingo.appendChild(cell);
+    cells.push(txt);
+
+    // dopasowanie czcionki przy każdej zmianie tekstu
+    txt.addEventListener('input', (function(t){ return function(){ fitCell(t); }; })(txt));
+    // wklejanie zawsze jako czysty tekst
+    txt.addEventListener('paste', onPastePlain);
+    // klik gdziekolwiek w komórce ustawia kursor w polu tekstowym
+    pad.addEventListener('mousedown', (function(t){
+      return function(e){ if(e.target !== t){ e.preventDefault(); t.focus(); placeCaretEnd(t); } };
+    })(txt));
+  }
+
+  /* ---- Automatyczne dobieranie font-size, aby tekst się zmieścił ---- */
+  function fitCell(txt){
+    var pad = txt.parentElement;
+    var availH = pad.clientHeight - PAD*2;
+    var availW = pad.clientWidth - PAD*2;
+    if(availH <= 0 || availW <= 0) return;
+
+    var size = MAX_FONT;
+    txt.style.fontSize = size + 'px';
+    while(size > MIN_FONT && (txt.scrollHeight > availH || txt.scrollWidth > availW)){
+      size -= 0.5;
+      txt.style.fontSize = size + 'px';
+    }
+  }
+
+  function fitAll(){ for(var i=0;i<cells.length;i++){ fitCell(cells[i]); } }
+
+  function onPastePlain(e){
+    e.preventDefault();
+    var text = (e.clipboardData || window.clipboardData).getData('text');
+    text = text.replace(/\r\n/g, '\n');
+    document.execCommand('insertText', false, text);
+  }
+
+  function placeCaretEnd(el){
+    try{
+      var range = document.createRange();
+      range.selectNodeContents(el);
+      range.collapse(false);
+      var sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }catch(err){}
+  }
+
+  function debounce(fn, ms){
+    var t;
+    return function(){ clearTimeout(t); t = setTimeout(fn, ms); };
+  }
+
+  // dopasuj po załadowaniu layoutu i przy zmianie rozmiaru okna
+  requestAnimationFrame(fitAll);
+  window.addEventListener('load', fitAll);
+  window.addEventListener('resize', debounce(fitAll, 120));
+
+  /* ---- Wyczyść ---- */
+  document.getElementById('clear').addEventListener('click', function(){
+    if(!confirm('Wyczyścić wszystkie pola bingo i nick?')) return;
+    document.getElementById('nick').value = '';
+    for(var i=0;i<cells.length;i++){ cells[i].textContent = ''; }
+    fitAll();
+  });
+
+  /* =========================================================
+     EKSPORT do PNG — samodzielne renderowanie na canvas
+     (wierny wycinek: tytuł + nick + siatka 5x5)
+     ========================================================= */
+  document.getElementById('save').addEventListener('click', exportImage);
+
+  var FAMILY = "'Cinzel', Georgia, 'Times New Roman', serif";
+
+  function exportImage(){
+    var scale = 2;                 // render w wysokiej rozdzielczości
+    var W = 1000, padX = 46, gap = 12;
+    var gridW = W - padX*2;
+    var cs = (gridW - gap*4) / 5;  // rozmiar komórki
+    var gridH = cs*5 + gap*4;
+
+    var topPad = 46, botPad = 46;
+    var titleSize = 42, nickLabelSize = 15, nickSize = 26, creditsSize = 15;
+    var gapTitleNick = 30, gapLabelNick = 8, gapNickGrid = 30, gapGridCredits = 34;
+
+    var nickBlock = nickLabelSize + gapLabelNick + nickSize;
+    var H = topPad + titleSize + gapTitleNick + nickBlock + gapNickGrid + gridH + gapGridCredits + creditsSize + botPad;
+
+    var canvas = document.getElementById('exportCanvas');
+    canvas.width = Math.round(W*scale);
+    canvas.height = Math.round(H*scale);
+    var ctx = canvas.getContext('2d');
+    ctx.scale(scale, scale);
+
+    // tło — gradient jak na stronie
+    var g = ctx.createRadialGradient(W*0.5, H*0.22, 0, W*0.5, H*0.22, Math.max(W,H)*0.95);
+    g.addColorStop(0.00, '#204f47');
+    g.addColorStop(0.30, '#143b35');
+    g.addColorStop(0.52, '#0c2822');
+    g.addColorStop(0.78, '#061613');
+    g.addColorStop(1.00, '#020c0a');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+
+    // delikatna zielona poświata
+    var g2 = ctx.createRadialGradient(W*0.5, H*0.62, 0, W*0.5, H*0.62, W*0.5);
+    g2.addColorStop(0, 'rgba(95,224,137,0.12)');
+    g2.addColorStop(1, 'rgba(95,224,137,0)');
+    ctx.fillStyle = g2;
+    ctx.fillRect(0, 0, W, H);
+
+    var y = topPad;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+
+    // tytuł
+    ctx.font = '600 ' + titleSize + "px " + FAMILY;
+    ctx.fillStyle = '#e8f7ee';
+    ctx.save();
+    ctx.shadowColor = 'rgba(95,224,137,0.55)';
+    ctx.shadowBlur = 18;
+    ctx.fillText('PoE 1: Curse of the Allflame', W/2, y);
+    ctx.restore();
+    y += titleSize + gapTitleNick;
+
+    // etykieta nicku
+    ctx.font = nickLabelSize + "px " + FAMILY;
+    ctx.fillStyle = 'rgba(95,224,137,0.85)';
+    ctx.fillText(spaced('NICK GRACZA'), W/2, y);
+    y += nickLabelSize + gapLabelNick;
+
+    // wartość nicku
+    var nickVal = (document.getElementById('nick').value || '').trim() || '—';
+    ctx.font = '600 ' + nickSize + "px " + FAMILY;
+    ctx.fillStyle = '#7dffa4';
+    ctx.save();
+    ctx.shadowColor = 'rgba(95,224,137,0.5)';
+    ctx.shadowBlur = 12;
+    ctx.fillText(nickVal, W/2, y);
+    ctx.restore();
+    y += nickSize + gapNickGrid;
+
+    // siatka
+    var gridTop = y;
+    for(var r=0; r<5; r++){
+      for(var c=0; c<5; c++){
+        var idx = r*5 + c;
+        var x = padX + c*(cs+gap);
+        var cy = gridTop + r*(cs+gap);
+
+        roundRect(ctx, x, cy, cs, cs, 8);
+        ctx.fillStyle = 'rgba(8,32,28,0.55)';
+        ctx.fill();
+
+        ctx.save();
+        ctx.shadowColor = 'rgba(95,224,137,0.4)';
+        ctx.shadowBlur = 8;
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#54dd86';
+        ctx.stroke();
+        ctx.restore();
+
+        var text = (cells[idx].innerText || '').replace(/\s+/g, ' ').trim();
+        if(text){
+          drawCellText(ctx, text, x + cs/2, cy + cs/2, cs - 16, cs - 16);
+        }
+      }
+    }
+
+    // stopka „Created for INSOMNIA"
+    var creditsY = gridTop + gridH + gapGridCredits;
+    ctx.font = creditsSize + "px " + FAMILY;
+    ctx.textBaseline = 'top';
+    var cLeft = spaced('CREATED FOR');
+    var cRight = spaced('INSOMNIA');
+    var gapCredit = creditsSize * 0.9;
+    var wLeft = ctx.measureText(cLeft).width;
+    var wRight = ctx.measureText(cRight).width;
+    var cStartX = W/2 - (wLeft + gapCredit + wRight) / 2;
+    ctx.textAlign = 'left';
+    ctx.fillStyle = 'rgba(142,240,176,0.5)';
+    ctx.fillText(cLeft, cStartX, creditsY);
+    ctx.save();
+    ctx.fillStyle = '#7dffa4';
+    ctx.shadowColor = 'rgba(95,224,137,0.5)';
+    ctx.shadowBlur = 10;
+    ctx.fillText(cRight, cStartX + wLeft + gapCredit, creditsY);
+    ctx.restore();
+    ctx.textAlign = 'center';
+
+    // pobranie pliku
+    canvas.toBlob(function(blob){
+      var safe = (document.getElementById('nick').value || '').trim().replace(/[^\w\-]+/g, '_') || 'bingo';
+      var a = document.createElement('a');
+      a.download = 'LeagueBingo_' + safe + '.png';
+      a.href = URL.createObjectURL(blob);
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 600);
+    }, 'image/png');
+  }
+
+  // sztuczny letter-spacing dla etykiety (canvas nie wspiera go natywnie)
+  function spaced(s){ return s.split('').join('  '); }
+
+  function roundRect(ctx, x, y, w, h, r){
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.arcTo(x+w, y,   x+w, y+h, r);
+    ctx.arcTo(x+w, y+h, x,   y+h, r);
+    ctx.arcTo(x,   y+h, x,   y,   r);
+    ctx.arcTo(x,   y,   x+w, y,   r);
+    ctx.closePath();
+  }
+
+  function drawCellText(ctx, text, cx, cy, maxW, maxH){
+    var size = 28;
+    var lines = [];
+    while(size >= 8){
+      ctx.font = size + "px " + FAMILY;
+      lines = wrapText(ctx, text, maxW);
+      var lineH = size * 1.16;
+      var total = lines.length * lineH;
+      var widest = 0;
+      for(var i=0;i<lines.length;i++){ widest = Math.max(widest, ctx.measureText(lines[i]).width); }
+      if(total <= maxH && widest <= maxW) break;
+      size -= 1;
+    }
+    var lh = size * 1.16;
+    var ty = cy - (lines.length - 1) * lh / 2;
+    ctx.fillStyle = '#8ef0b0';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.save();
+    ctx.shadowColor = 'rgba(95,224,137,0.35)';
+    ctx.shadowBlur = 6;
+    for(var j=0;j<lines.length;j++){
+      ctx.fillText(lines[j], cx, ty);
+      ty += lh;
+    }
+    ctx.restore();
+  }
+
+  function wrapText(ctx, text, maxW){
+    var words = text.split(' ');
+    var lines = [];
+    var line = '';
+    for(var k=0; k<words.length; k++){
+      var w = words[k];
+      // łamanie bardzo długiego pojedynczego słowa
+      while(ctx.measureText(w).width > maxW && w.length > 1){
+        var n = 1;
+        while(n < w.length && ctx.measureText(w.slice(0, n+1)).width <= maxW){ n++; }
+        if(line){ lines.push(line); line = ''; }
+        lines.push(w.slice(0, n));
+        w = w.slice(n);
+      }
+      var test = line ? line + ' ' + w : w;
+      if(ctx.measureText(test).width > maxW && line){
+        lines.push(line);
+        line = w;
+      } else {
+        line = test;
+      }
+    }
+    if(line) lines.push(line);
+    return lines;
+  }
+
+})();
+</script>
+</body>
+</html>
