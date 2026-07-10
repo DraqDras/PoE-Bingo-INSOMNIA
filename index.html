@@ -93,6 +93,7 @@
     border-color:var(--green-strong);
     box-shadow:0 0 12px var(--green-glow), inset 0 0 10px rgba(0,0,0,.35);
   }
+  .nick-input:read-only{opacity:.9}
 
   /* ---- Bingo 5x5 ---- */
   .bingo{
@@ -137,29 +138,63 @@
     white-space:normal;
   }
 
-  /* ---- Akcje (poza obszarem eksportu) ---- */
+  /* ---- Oznaczenie X (tryb gry) ---- */
+  .cell-mark{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    pointer-events:none;
+    opacity:0;
+    transition:opacity .12s ease;
+  }
+  .cell-mark line{
+    stroke:var(--green-strong);
+    stroke-width:9;
+    stroke-linecap:round;
+  }
+  .cell.marked .cell-mark{opacity:.6}
+  .cell.in-line{
+    border-color:var(--green-strong);
+    box-shadow:0 0 16px var(--green-glow), inset 0 0 16px rgba(95,224,137,.16);
+  }
+  /* w trybie gry: kafelki klikalne, edycja zablokowana */
+  .card.running .cell-pad{cursor:pointer}
+  .card.running .cell-text{pointer-events:none; user-select:none}
+
+  /* ---- Baner BINGO ---- */
+  .bingo-banner{
+    display:none;
+    font-size:clamp(30px,7vw,54px);
+    font-weight:700;
+    letter-spacing:.28em;
+    color:var(--green-strong);
+    text-shadow:0 0 14px var(--green-glow), 0 0 34px rgba(95,224,137,.5);
+    text-align:center;
+  }
+  .bingo-banner.show{display:block; animation:bingoPulse 1.2s ease-in-out infinite}
+  @keyframes bingoPulse{0%,100%{transform:scale(1);opacity:.9}50%{transform:scale(1.06);opacity:1}}
+
+  /* ---- Panel akcji (prawa strona; NIE wpływa na eksport PNG) ---- */
   .actions{
-    position:relative;
-    z-index:1;
-    margin-top:28px;
+    z-index:5;
     display:flex;
-    gap:14px;
-    flex-wrap:wrap;
-    justify-content:center;
+    flex-direction:column;
+    gap:11px;
   }
   .btn{
     font-family:inherit;
     cursor:pointer;
-    padding:12px 26px;
+    padding:11px 16px;
     border-radius:9px;
     background:linear-gradient(180deg, rgba(95,224,137,.22), rgba(95,224,137,.08));
     border:1.6px solid var(--green-border);
     color:var(--green-strong);
-    font-size:16px;
-    letter-spacing:.08em;
+    font-size:14px;
+    letter-spacing:.04em;
     text-shadow:0 0 8px var(--green-glow);
     box-shadow:0 0 10px rgba(95,224,137,.25), inset 0 0 12px rgba(0,0,0,.3);
-    transition:transform .08s, box-shadow .2s, background .2s;
+    transition:transform .08s, box-shadow .2s, background .2s, color .2s, border-color .2s;
   }
   .btn:hover{
     background:linear-gradient(180deg, rgba(95,224,137,.34), rgba(95,224,137,.14));
@@ -170,21 +205,68 @@
     color:var(--green-text);
     background:linear-gradient(180deg, rgba(95,224,137,.10), rgba(95,224,137,.03));
   }
-
-  .hint{
-    position:relative;
-    z-index:1;
-    margin-top:14px;
-    font-size:12px;
-    letter-spacing:.06em;
-    color:rgba(142,240,176,.45);
-    text-align:center;
+  .btn.run{
+    color:#e6fff0;
+    background:linear-gradient(180deg, rgba(95,224,137,.4), rgba(95,224,137,.16));
+    border-color:var(--green-strong);
+    font-size:15px;
   }
+  .btn.run.active{
+    color:#ffe6e6;
+    background:linear-gradient(180deg, rgba(224,95,95,.34), rgba(224,95,95,.12));
+    border-color:#e57d7d;
+    text-shadow:0 0 8px rgba(224,95,95,.5);
+    box-shadow:0 0 12px rgba(224,95,95,.3), inset 0 0 12px rgba(0,0,0,.3);
+  }
+
+  @media (min-width:1000px){
+    body{padding-right:250px}
+    .actions{
+      position:fixed;
+      top:50%;
+      right:22px;
+      transform:translateY(-50%);
+      width:212px;
+      max-height:calc(100vh - 20px);
+      overflow-y:auto;
+    }
+  }
+  @media (max-width:999px){
+    .actions{
+      position:relative;
+      margin-top:26px;
+      flex-flow:row wrap;
+      justify-content:center;
+      width:min(680px,100%);
+    }
+    .btn{padding:11px 18px}
+  }
+
+  /* ---- Opisy działania przycisków (pod przyciskami akcji) ---- */
+  .actions-desc{
+    width:100%;               /* = szerokość przycisków w panelu */
+    margin-top:6px;
+    display:flex;
+    flex-direction:column;
+    gap:7px;
+  }
+  .desc{
+    font-size:11.5px;
+    line-height:1.45;
+    letter-spacing:.01em;
+    color:rgba(142,240,176,.5);
+    text-align:left;
+    word-break:break-word;
+    overflow-wrap:anywhere;   /* zwijaj tekst, nie przekraczaj szerokości */
+  }
+  .desc b{color:var(--green-strong); font-weight:600}
+  /* elementy tylko dla trybu edycji (chowane w trybie gry) */
+  .actions.running .edit-only{display:none}
 
   .credits{
     position:relative;
     z-index:1;
-    margin-top:34px;
+    margin-top:22px;
     font-size:12px;
     letter-spacing:.22em;
     text-transform:uppercase;
@@ -209,14 +291,29 @@
     </div>
 
     <div class="bingo" id="bingo"></div>
+
+    <div class="bingo-banner" id="bingoBanner">BINGO!</div>
   </div>
 
-  <div class="actions">
-    <button id="save" class="btn">💾 Zapisz jako grafikę (PNG)</button>
-    <button id="clear" class="btn secondary">Wyczyść</button>
-  </div>
+  <div class="actions" id="actions">
+    <button id="run" class="btn run">▶ Uruchom bingo</button>
+    <button id="shuffle" class="btn secondary edit-only">🎲 Losuj kolejność</button>
+    <button id="save" class="btn">💾 Zapisz grafikę (PNG)</button>
+    <button id="saveJson" class="btn secondary">⬇ Zapisz JSON</button>
+    <button id="loadJson" class="btn secondary">⬆ Wczytaj JSON</button>
+    <button id="clear" class="btn secondary">✖ Wyczyść</button>
 
-  <div class="hint">Kliknij dowolną komórkę, aby ją edytować. Czcionka dopasuje się automatycznie.</div>
+    <div class="actions-desc">
+      <div class="desc"><b>▶ Uruchom bingo</b> — start trybu gry: blokuje edycję, klikaj kafelki, aby oznaczać je <b>X</b>; pełny wiersz lub kolumna = <b>BINGO!</b> (ponowne kliknięcie wraca do edycji).</div>
+      <div class="desc edit-only"><b>🎲 Losuj kolejność</b> — miesza treść wszystkich kafelków w losowej kolejności.</div>
+      <div class="desc"><b>💾 Zapisz grafikę</b> — pobiera kartę jako obrazek PNG (w trybie gry z oznaczeniami X).</div>
+      <div class="desc"><b>⬇ Zapisz JSON</b> — zapisuje układ (nick, kafelki, zaznaczenia) do pliku.</div>
+      <div class="desc"><b>⬆ Wczytaj JSON</b> — odtwarza układ z wcześniej zapisanego pliku.</div>
+      <div class="desc"><b>✖ Wyczyść</b> — czyści nick, wszystkie pola i zaznaczenia.</div>
+    </div>
+
+    <input id="jsonFile" type="file" accept="application/json,.json" style="display:none">
+  </div>
 
   <footer class="credits">Created for <strong>INSOMNIA</strong></footer>
 
@@ -230,14 +327,37 @@
   var PAD = 6;          // wewnętrzny padding komórki (musi zgadzać się z .cell-pad)
   var MAX_FONT = 20;    // px
   var MIN_FONT = 7;     // px
+  var SVGNS = 'http://www.w3.org/2000/svg';
+  var FAMILY = "'Cinzel', Georgia, 'Times New Roman', serif";
 
-  var bingo = document.getElementById('bingo');
-  var cells = [];       // referencje do .cell-text (contenteditable)
+  var card      = document.getElementById('card');
+  var bingoEl   = document.getElementById('bingo');
+  var nickInput = document.getElementById('nick');
+  var banner    = document.getElementById('bingoBanner');
+  var runBtn    = document.getElementById('run');
+  var saveBtn   = document.getElementById('save');
+  var actionsEl = document.getElementById('actions');
+  var shuffleBtn= document.getElementById('shuffle');
+
+  var cells   = [];   // .cell-text (contenteditable)
+  var cellEls = [];   // .cell
+  var marks   = [];   // boolean[25]
+  var running = false;
+
+  function svgLine(x1,y1,x2,y2){
+    var l = document.createElementNS(SVGNS,'line');
+    l.setAttribute('x1',x1); l.setAttribute('y1',y1);
+    l.setAttribute('x2',x2); l.setAttribute('y2',y2);
+    return l;
+  }
 
   /* ---- Budowa siatki 5x5 ---- */
   for(var i=0; i<GRID*GRID; i++){
+    marks.push(false);
+
     var cell = document.createElement('div');
     cell.className = 'cell';
+    cell.setAttribute('data-idx', i);
 
     var pad = document.createElement('div');
     pad.className = 'cell-pad';
@@ -248,17 +368,40 @@
 
     pad.appendChild(txt);
     cell.appendChild(pad);
-    bingo.appendChild(cell);
+
+    // Oznaczenie X (SVG rozciągnięte na cały kafelek)
+    var mark = document.createElementNS(SVGNS,'svg');
+    mark.setAttribute('class','cell-mark');
+    mark.setAttribute('viewBox','0 0 100 100');
+    mark.setAttribute('aria-hidden','true');
+    mark.appendChild(svgLine(12,12,88,88));
+    mark.appendChild(svgLine(88,12,12,88));
+    cell.appendChild(mark);
+
+    bingoEl.appendChild(cell);
     cells.push(txt);
+    cellEls.push(cell);
 
     // dopasowanie czcionki przy każdej zmianie tekstu
     txt.addEventListener('input', (function(t){ return function(){ fitCell(t); }; })(txt));
     // wklejanie zawsze jako czysty tekst
     txt.addEventListener('paste', onPastePlain);
-    // klik gdziekolwiek w komórce ustawia kursor w polu tekstowym
+    // klik gdziekolwiek w komórce ustawia kursor w polu tekstowym (tylko w edycji)
     pad.addEventListener('mousedown', (function(t){
-      return function(e){ if(e.target !== t){ e.preventDefault(); t.focus(); placeCaretEnd(t); } };
+      return function(e){
+        if(running) return;
+        if(e.target !== t){ e.preventDefault(); t.focus(); placeCaretEnd(t); }
+      };
     })(txt));
+    // klik na kafelek w trybie gry = oznacz/odznacz X
+    cell.addEventListener('click', (function(idx){
+      return function(){
+        if(!running) return;
+        marks[idx] = !marks[idx];
+        cellEls[idx].classList.toggle('marked', marks[idx]);
+        checkBingo();
+      };
+    })(i));
   }
 
   /* ---- Automatyczne dobieranie font-size, aby tekst się zmieścił ---- */
@@ -306,21 +449,143 @@
   window.addEventListener('load', fitAll);
   window.addEventListener('resize', debounce(fitAll, 120));
 
+  /* =========================================================
+     TRYB GRY — oznaczanie X i wykrywanie BINGO
+     ========================================================= */
+  // Zwraca zbiór indeksów należących do ukończonych linii + flagę "any".
+  function completedLineCells(){
+    var set = {};
+    var any = false;
+    // wiersze
+    for(var r=0; r<5; r++){
+      var full = true;
+      for(var c=0; c<5; c++){ if(!marks[r*5+c]){ full = false; break; } }
+      if(full){ any = true; for(var c2=0;c2<5;c2++){ set[r*5+c2] = true; } }
+    }
+    // kolumny
+    for(var col=0; col<5; col++){
+      var full2 = true;
+      for(var r2=0; r2<5; r2++){ if(!marks[r2*5+col]){ full2 = false; break; } }
+      if(full2){ any = true; for(var r3=0;r3<5;r3++){ set[r3*5+col] = true; } }
+    }
+    return { any: any, set: set };
+  }
+
+  function checkBingo(){
+    var info = completedLineCells();
+    for(var i=0;i<cellEls.length;i++){
+      cellEls[i].classList.toggle('in-line', !!info.set[i]);
+    }
+    banner.classList.toggle('show', info.any);
+  }
+
+  function clearMarks(){
+    for(var i=0;i<marks.length;i++){
+      marks[i] = false;
+      cellEls[i].classList.remove('marked','in-line');
+    }
+    banner.classList.remove('show');
+  }
+
+  function setRunning(on){
+    running = on;
+    card.classList.toggle('running', on);
+    for(var i=0;i<cells.length;i++){ cells[i].contentEditable = on ? 'false' : 'true'; }
+    nickInput.readOnly = on;
+    runBtn.classList.toggle('active', on);
+    runBtn.textContent = on ? '✏ Tryb edycji' : '▶ Uruchom bingo';
+    saveBtn.textContent = on ? '💾 Zapisz wyniki (PNG)' : '💾 Zapisz grafikę (PNG)';
+    actionsEl.classList.toggle('running', on);   // chowa elementy .edit-only
+    if(!on){ clearMarks(); }  // wyjście z trybu gry czyści zaznaczenia
+  }
+
+  runBtn.addEventListener('click', function(){ setRunning(!running); });
+
+  /* ---- Losuj kolejność (tylko w trybie edycji) ---- */
+  shuffleBtn.addEventListener('click', function(){
+    if(running) return;
+    var texts = cells.map(function(t){ return t.textContent; });
+    for(var i=texts.length-1; i>0; i--){         // Fisher–Yates
+      var j = Math.floor(Math.random()*(i+1));
+      var tmp = texts[i]; texts[i] = texts[j]; texts[j] = tmp;
+    }
+    for(var k=0; k<cells.length; k++){ cells[k].textContent = texts[k]; }
+    fitAll();
+  });
+
   /* ---- Wyczyść ---- */
   document.getElementById('clear').addEventListener('click', function(){
-    if(!confirm('Wyczyścić wszystkie pola bingo i nick?')) return;
-    document.getElementById('nick').value = '';
+    if(!confirm('Wyczyścić nick, wszystkie pola i zaznaczenia?')) return;
+    setRunning(false);
+    nickInput.value = '';
     for(var i=0;i<cells.length;i++){ cells[i].textContent = ''; }
     fitAll();
   });
 
   /* =========================================================
-     EKSPORT do PNG — samodzielne renderowanie na canvas
-     (wierny wycinek: tytuł + nick + siatka 5x5)
+     ZAPIS / WCZYTANIE JSON
      ========================================================= */
-  document.getElementById('save').addEventListener('click', exportImage);
+  function saveJSON(){
+    var data = {
+      app: 'PoE-Bingo-INSOMNIA',
+      version: 1,
+      nick: nickInput.value || '',
+      cells: cells.map(function(t){ return (t.innerText || '').replace(/\r\n/g,'\n').trim(); }),
+      marks: marks.slice(),
+      running: running
+    };
+    var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    var safe = (data.nick || '').trim().replace(/[^\w\-]+/g,'_') || 'bingo';
+    var a = document.createElement('a');
+    a.download = 'LeagueBingo_' + safe + '.json';
+    a.href = URL.createObjectURL(blob);
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 600);
+  }
 
-  var FAMILY = "'Cinzel', Georgia, 'Times New Roman', serif";
+  function applyData(data){
+    setRunning(false);                        // najpierw wróć do edycji (czyści zaznaczenia)
+    nickInput.value = (data && data.nick) || '';
+    var arr = (data && data.cells) || [];
+    for(var i=0;i<cells.length;i++){
+      cells[i].textContent = (arr[i] != null ? String(arr[i]) : '');
+    }
+    fitAll();
+    // przywróć zaznaczenia
+    var m = (data && data.marks) || [];
+    for(var j=0;j<marks.length;j++){ marks[j] = !!m[j]; }
+    if(data && data.running){
+      setRunning(true);                       // NIE czyści zaznaczeń
+      for(var k=0;k<marks.length;k++){ cellEls[k].classList.toggle('marked', marks[k]); }
+      checkBingo();
+    }
+  }
+
+  document.getElementById('saveJson').addEventListener('click', saveJSON);
+  document.getElementById('loadJson').addEventListener('click', function(){
+    document.getElementById('jsonFile').click();
+  });
+  document.getElementById('jsonFile').addEventListener('change', function(e){
+    var file = e.target.files && e.target.files[0];
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(){
+      try{
+        applyData(JSON.parse(reader.result));
+      }catch(err){
+        alert('Nie udało się wczytać pliku JSON: ' + err.message);
+      }
+      e.target.value = '';   // pozwól wczytać ten sam plik ponownie
+    };
+    reader.readAsText(file);
+  });
+
+  /* =========================================================
+     EKSPORT do PNG — samodzielne renderowanie na canvas
+     (wierny wycinek: tytuł + nick + siatka 5x5 + ew. X i BINGO)
+     ========================================================= */
+  saveBtn.addEventListener('click', exportImage);
 
   function exportImage(){
     var scale = 2;                 // render w wysokiej rozdzielczości
@@ -329,12 +594,16 @@
     var cs = (gridW - gap*4) / 5;  // rozmiar komórki
     var gridH = cs*5 + gap*4;
 
+    var hasBingo = completedLineCells().any;
+
     var topPad = 46, botPad = 46;
-    var titleSize = 42, nickLabelSize = 15, nickSize = 26, creditsSize = 15;
+    var titleSize = 42, nickLabelSize = 15, nickSize = 26, creditsSize = 15, bingoSize = 46;
     var gapTitleNick = 30, gapLabelNick = 8, gapNickGrid = 30, gapGridCredits = 34;
+    var gapGridBingo = 30, gapBingoCredits = 30;
 
     var nickBlock = nickLabelSize + gapLabelNick + nickSize;
-    var H = topPad + titleSize + gapTitleNick + nickBlock + gapNickGrid + gridH + gapGridCredits + creditsSize + botPad;
+    var afterGrid = hasBingo ? (gapGridBingo + bingoSize + gapBingoCredits) : gapGridCredits;
+    var H = topPad + titleSize + gapTitleNick + nickBlock + gapNickGrid + gridH + afterGrid + creditsSize + botPad;
 
     var canvas = document.getElementById('exportCanvas');
     canvas.width = Math.round(W*scale);
@@ -380,7 +649,7 @@
     y += nickLabelSize + gapLabelNick;
 
     // wartość nicku
-    var nickVal = (document.getElementById('nick').value || '').trim() || '—';
+    var nickVal = (nickInput.value || '').trim() || '—';
     ctx.font = '600 ' + nickSize + "px " + FAMILY;
     ctx.fillStyle = '#7dffa4';
     ctx.save();
@@ -414,11 +683,31 @@
         if(text){
           drawCellText(ctx, text, x + cs/2, cy + cs/2, cs - 16, cs - 16);
         }
+        if(marks[idx]){
+          drawMark(ctx, x, cy, cs);
+        }
       }
     }
 
+    // pozycja stopki (z ew. banerem BINGO nad nią)
+    var creditsY;
+    if(hasBingo){
+      var bingoY = gridTop + gridH + gapGridBingo;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.font = '700 ' + bingoSize + "px " + FAMILY;
+      ctx.save();
+      ctx.fillStyle = '#7dffa4';
+      ctx.shadowColor = 'rgba(95,224,137,0.6)';
+      ctx.shadowBlur = 24;
+      ctx.fillText(spaced('BINGO!'), W/2, bingoY);
+      ctx.restore();
+      creditsY = bingoY + bingoSize + gapBingoCredits;
+    } else {
+      creditsY = gridTop + gridH + gapGridCredits;
+    }
+
     // stopka „Created for INSOMNIA"
-    var creditsY = gridTop + gridH + gapGridCredits;
     ctx.font = creditsSize + "px " + FAMILY;
     ctx.textBaseline = 'top';
     var cLeft = spaced('CREATED FOR');
@@ -440,9 +729,9 @@
 
     // pobranie pliku
     canvas.toBlob(function(blob){
-      var safe = (document.getElementById('nick').value || '').trim().replace(/[^\w\-]+/g, '_') || 'bingo';
+      var safe = (nickInput.value || '').trim().replace(/[^\w\-]+/g, '_') || 'bingo';
       var a = document.createElement('a');
-      a.download = 'LeagueBingo_' + safe + '.png';
+      a.download = 'LeagueBingo_' + safe + (running ? '_wynik' : '') + '.png';
       a.href = URL.createObjectURL(blob);
       document.body.appendChild(a);
       a.click();
@@ -450,8 +739,24 @@
     }, 'image/png');
   }
 
-  // sztuczny letter-spacing dla etykiety (canvas nie wspiera go natywnie)
-  function spaced(s){ return s.split('').join('  '); }
+  // X na kafelku (spójne z widokiem na stronie)
+  function drawMark(ctx, x, y, size){
+    var inset = size * 0.16;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(125,255,164,0.62)';
+    ctx.lineWidth = Math.max(4, size*0.09);
+    ctx.lineCap = 'round';
+    ctx.shadowColor = 'rgba(95,224,137,0.5)';
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.moveTo(x+inset, y+inset);         ctx.lineTo(x+size-inset, y+size-inset);
+    ctx.moveTo(x+size-inset, y+inset);    ctx.lineTo(x+inset, y+size-inset);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // sztuczny letter-spacing dla napisów (canvas nie wspiera go natywnie)
+  function spaced(s){ return s.split('').join('  '); }
 
   function roundRect(ctx, x, y, w, h, r){
     ctx.beginPath();
