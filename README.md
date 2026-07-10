@@ -2,8 +2,7 @@
 
 A simple, single-file **bingo card generator** for the *Path of Exile 1: Curse of the Allflame* league.
 
-**▶ Live page:** https://YOUR-GITHUB-USERNAME.github.io/PoE-Bingo-INSOMNIA/
-<!-- Ten link zacznie działać po włączeniu GitHub Pages; zaktualizuję go właściwą nazwą użytkownika. -->
+**▶ Live page:** https://draqdras.github.io/PoE-Bingo-INSOMNIA/
 
 ## Features
 
